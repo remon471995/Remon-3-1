@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Amadeus Converter Ultimate</title>
+  <style>
+    body{
+      font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+      background-color:#f4f7f6;
+      color:#333;margin:0;display:flex;justify-content:center;align-items:center;
+      min-height:100vh;direction:ltr;text-align:left;line-height:1.6;
+    }
+    .login-container{
+      max-width:400px;width:90%;background:#fff;padding:40px;border-radius:8px;
+      box-shadow:0 4px 20px rgba(0,0,0,.15);display:block;
+    }
+    .login-container h1{color:#2c3e50;text-align:center;margin-bottom:30px;}
+    .login-container input{
+      width:100%;padding:12px;margin-bottom:15px;border:1px solid #ddd;border-radius:5px;
+      box-sizing:border-box;
+    }
+    .login-container button{
+      background:#007bff;color:#fff;padding:12px 25px;border:none;border-radius:5px;width:100%;
+      cursor:pointer;font-size:16px;
+    }
+    .login-container button:hover{background:#0056b3;}
+    .message{margin-top:20px;padding:10px;border-radius:5px;text-align:center;display:none;}
+    .message.error{background:#ffeaea;color:#dc3545;}
+    .message.success{background:#e6ffe6;color:#28a745;}
+
+    .converter-container{
+      max-width:900px;width:90%;margin:40px auto;background:#fff;padding:30px;border-radius:8px;
+      box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;direction:ltr;
+    }
+    .converter-container h1{color:#2c3e50;text-align:center;margin-bottom:30px;}
+    .converter-container textarea{
+      width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:16px;
+      box-sizing:border-box;min-height:110px;resize:vertical;
+    }
+    .button-group{display:flex;justify-content:center;gap:15px;margin-top:30px;}
+    .converter-container button{
+      background:#007bff;color:#fff;padding:10px 20px;border:none;border-radius:5px;
+      cursor:pointer;font-size:16px;
+    }
+    .converter-container button.clear-button{background:#6c757d;}
+    .converter-container button.copy-button{background:#28a745;}
+
+    .options-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:15px;direction:rtl;}
+    .options-row > div{flex:1;min-width:140px;}
+    .options-row label{display:block;font-size:14px;font-weight:bold;margin-bottom:5px;}
+    .options-row select,.options-row input{
+      width:100%;padding:8px;border:1px solid #ddd;border-radius:5px;box-sizing:border-box;font-size:15px;
+    }
+
+    .trip-label{direction:rtl;text-align:right;margin:14px 0 6px;font-size:16px;color:#0d47a1;}
+    .flight-segment{
+      background:#f9f9f9;border:1px solid #e0e0e0;border-radius:6px;padding:10px 14px;margin-bottom:8px;
+      box-shadow:0 2px 4px rgba(0,0,0,.05);line-height:1.6;direction:rtl;font-size:15px;text-align:right;
+    }
+    .flight-segment p{margin:2px 0;}
+    .extra-box{direction:rtl;text-align:right;margin:8px 0;font-size:15px;}
+    .extra-box p{margin:2px 0;}
+    .line-error{
+      background:#fff0f0;border:1px solid #ffcccc;color:#b00020;border-radius:6px;padding:12px 15px;margin-bottom:10px;
+      direction:rtl;text-align:right;font-size:15px;
+    }
+    .transit-box{
+      background:#e3f2fd;color:#0d47a1;padding:8px 15px;margin-bottom:10px;border-radius:20px;
+      text-align:center;font-weight:bold;font-size:.9em;direction:rtl;border:1px dashed #90caf9;width:fit-content;
+      margin-left:auto;margin-right:auto;
+    }
+    .transit-box.warning{background:#ffebee;color:#c62828;border-color:#ef9a9a;}
+    .disclaimer-box{
+      background:#fff3cd;border:1px solid #ffeeba;color:#856404;padding:8px 12px;border-radius:6px;margin-top:12px;
+      direction:rtl;text-align:right;font-size:.9em;
+    }
+    #resultsOutput[contenteditable="true"]{outline:none;}
+    #resultsOutput[contenteditable="true"]:focus{background:#fffef8;}
+    .copy-feedback{text-align:center;color:#28a745;margin-top:10px;font-weight:bold;opacity:0;transition:opacity .3s;}
+    .copy-feedback.show{opacity:1;}
+  </style>
+</head>
+
+<body>
+
+  <div id="loginPage" class="login-container">
+    <h1>Login</h1>
+    <input type="text" id="username" placeholder="Username">
+    <input type="password" id="password" placeholder="Password">
+    <button id="loginButton">Login</button>
+    <div id="loginMessage" class="message"></div>
+    <div style="text-align:center; margin-top:20px; color:#666; font-size:0.9em;">
+      <p><strong>Remon</strong> | +201222880819</p>
+    </div>
+  </div>
+
+  <div id="converterToolPage" class="converter-container">
+    <h1>AMADEUS Converter</h1>
+
+    <div class="form-group">
+      <label style="font-weight:bold; display:block; margin-bottom:8px;">Amadeus Segments:</label>
+      <textarea id="amadeusSegments" rows="6" placeholder="Example:
+1 MS 985 K 20OCT CAIJFK HK1 1000 1500
+2 MS 986 K 25OCT JFKCAI HK1 1800 1100+1"></textarea>
+    </div>
+
+    <div class="options-row">
+      <div>
+        <label>شكل العرض</label>
+        <select id="viewMode">
+          <option value="compact">مختصر</option>
+          <option value="full">مفصل</option>
+        </select>
+      </div>
+      <div>
+        <label>الشنطة المشحونة</label>
+        <select id="baggageSelect">
+          <option value="auto">حسب الشركة (تقديري)</option>
+          <option value="none">بدون شنطة مشحونة</option>
+          <option value="20">20 كيلو</option>
+          <option value="23">23 كيلو</option>
+          <option value="30">30 كيلو</option>
+          <option value="2x23">2 × 23 كيلو</option>
+        </select>
+      </div>
+      <div>
+        <label>عدد الركاب</label>
+        <input type="number" id="paxInput" min="1" placeholder="اختياري">
+      </div>
+      <div>
+        <label>السعر</label>
+        <input type="text" id="priceInput" placeholder="اختياري، مثال: 450 دينار">
+      </div>
+    </div>
+
+    <div class="button-group">
+      <button id="convertButton">Convert</button>
+      <button id="clearInputButton" class="clear-button">Clear Input</button>
+    </div>
+
+    <div style="margin-top:40px; border-top:1px solid #eee; padding-top:20px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="margin:0;">Results</h2>
+        <div style="display:flex; gap:10px;">
+          <button id="copyResultsButton" class="copy-button" style="padding:5px 15px;">Copy</button>
+          <button id="copyWaButton" class="copy-button" style="padding:5px 15px;background:#25d366">Copy WhatsApp</button>
+          <button id="clearResultsButton" class="clear-button" style="padding:5px 15px;">Clear</button>
+        </div>
+      </div>
+      <div id="copyFeedback" class="copy-feedback">Copied!</div>
+
+      <div id="resultsOutput" contenteditable="true" style="padding:5px; border:1px dashed transparent;">
+        <p style="text-align:center; color:#888;">Results will appear here...</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- Login Logic ---
+    const loginPage = document.getElementById('loginPage');
+    const converterToolPage = document.getElementById('converterToolPage');
+
+    document.getElementById('loginButton').addEventListener('click', function() {
+      const u = document.getElementById('username').value;
+      const p = document.getElementById('password').value;
+      const msg = document.getElementById('loginMessage');
+      msg.style.display = 'none';
+
+      if (u === 'Remon' && p === 'Remon101224') {
+        msg.className = 'message success';
+        msg.textContent = 'خش برجلك اليمين!';
+        msg.style.display = 'block';
+        setTimeout(() => {
+          loginPage.style.display = 'none';
+          converterToolPage.style.display = 'block';
+          document.body.style.alignItems = 'flex-start';
+          document.body.style.paddingTop = '40px';
+        }, 800);
+      } else {
+        msg.className = 'message error';
+        msg.textContent = 'جرب تاني يا حماده.';
+        msg.style.display = 'block';
+      }
+    });
+
+    // --- FULL DATABASE: Airlines ---
+    const airlines = {
+      "TK": "الخطوط التركية", "FZ": "فلاي دبي", "SV": "الخطوط السعودية", "MS": "مصر للطيران",
+      "QR": "الخطوط القطرية", "EK": "طيران الإمارات", "WY": "الطيران العماني", "RJ": "الملكية الأردنية",
+      "EY": "الاتحاد للطيران", "GF": "الخطوط الخليجية", "KU": "الخطوط الكويتية", "ME": "طيران الشرق الأوسط (لبنان)",
+      "XY": "ناس للطيران (السعودية)", "G9": "العربية للطيران (الإمارات)", "J9": "طيران الجزيرة (الكويت)",
+      "W5": "ماهان إير (إيران)", "IR": "الخطوط الجوية الإيرانية", "IY": "اليمنية", "NP": "النيل للطيران (مصر)",
+      "NE": "نسما للطيران (مصر/السعودية)", "SM": "إير كايرو (مصر)", "UJ": "المصرية العالمية للطيران",
+      "ET": "الخطوط الجوية الإثيوبية", "TU": "الخطوط التونسية", "AH": "الخطوط الجوية الجزائرية",
+      "AT": "الخطوط الملكية المغربية", "B4": "النواقل الوطنية (موريتانيا)", "QY": "الخطوط الجوية السودانية",
+      "LH": "لوفتهانزا (ألمانيا)", "BA": "الخطوط البريطانية", "PC": "بيغاسوس التركية", "AZ": "أليطاليا (إيطاليا)",
+      "AF": "الخطوط الفرنسية", "KL": "كيه إل إم الهولندية", "IB": "إيبيريا الإسبانية",
+      "U2": "إيزي جيت (المملكة المتحدة)", "OS": "الخطوط النمساوية", "SK": "الخطوط الاسكندنافية",
+      "SN": "الخطوط البلجيكية", "QS": "سمارت وينغز (التشيك)", "OK": "الخطوط التشيكية",
+      "LO": "الخطوط البولندية", "LX": "سويس إنترناشونال إيرلاينز", "TP": "تاب البرتغالية",
+      "VY": "فويلينغ (إسبانيا)", "FB": "فلاي بلغاريا", "AY": "الخطوط الجوية الفنلندية",
+      "EI": "الخطوط الجوية الأيرلندية", "FI": "أيسلندا إير", "RO": "تاروم (رومانيا)",
+      "JU": "الخطوط الجوية الصربية", "OV": "نورديكا (إستونيا)", "BT": "إيربالتيك (لاتفيا)",
+      "UX": "إير أوروبا (إسبانيا)", "FR": "ريان إير (أيرلندا)", "W6": "ويز إير (المجر)",
+      "BY": "توي إيرويز (المملكة المتحدة)", "LS": "جيت2.كوم (المملكة المتحدة)",
+      "HV": "ترانسافيا (هولندا/فرنسا)", "EW": "يورو وينغز (ألمانيا)", "A3": "الخطوط الجوية اليونانية إيجه",
+      "OA": "أولمبيك إير (اليونان)", "CY": "سايبرس إيرويز (قبرص)", "KM": "إير مالطا",
+      "OU": "كرواتيا إيرلاينز", "JP": "أدريا إيرويز (سلوفينيا - توقفت)", "B2": "بيلافيا (بيلاروسيا)",
+      "PS": "الخطوط الجوية الأوكرانية الدولية", "EN": "إير دولوميتي (إيطالية)", "VO": "فولوتيا (إسبانية)",
+      "IG": "نيوس (إيطالية)", "XR": "ساس كونكت (الدنمارك/السويد)", "BD": "بلو إير (رومانيا - توقفت لكن معروفة)",
+      "X3": "توي فلاي ألمانيا (ألمانيا)", "SU": "إيروفلوت", "S7": "خطوط إس 7 الجوية", "UT": "يوت إير",
+      "DP": "بوبيدا (Pobeda Airlines)", "FV": "روسيا الخطوط الجوية", "WZ": "رد وينغز ايرلاينز",
+      "AI": "طيران الهند", "SQ": "الخطوط الجوية السنغافورية", "CX": "كاثي باسيفيك (هونغ كونغ)",
+      "JL": "الخطوط الجوية اليابانية", "NH": "أول نيبون إيرويز (اليابان)",
+      "KE": "الخطوط الجوية الكورية (كوريا الجنوبية)", "BR": "إيفا إير (تايوان)",
+      "CA": "الخطوط الجوية الصينية", "MU": "خطوط شرق الصين الجوية", "CZ": "خطوط جنوب الصين الجوية",
+      "TG": "الخطوط الجوية التايلاندية", "VN": "الخطوط الجوية الفيتنامية",
+      "PK": "الخطوط الجوية الباكستانية الدولية", "UL": "الخطوط الجوية السريلانكية",
+      "MH": "الخطوط الجوية الماليزية", "GA": "جارودا إندونيسيا", "PR": "الخطوط الجوية الفلبينية",
+      "CI": "تشاينا إيرلاينز (تايوان)", "OZ": "آسيانا إيرلاينز (كوريا الجنوبية)", "TR": "سكوت (سنغافورة)",
+      "OD": "ماليندو إير (ماليزيا)", "AK": "طيران آسيا (ماليزيا)", "D7": "طيران آسيا إكس (ماليزيا)",
+      "QZ": "إير آسيا إندونيسيا", "ID": "باتيك إير (إندونيسيا)", "JT": "ليون إير (إندونيسيا)",
+      "IW": "وينغز إير (إندونيسيا)", "J2": "أذربيجان الخطوط الجوية", "HY": "أوزبكستان إيرويز",
+      "KC": "إير أستانا (كازاخستان)", "DV": "سكات إيرلاينز (كازاخستان)", "QP": "طيران مالديفيان",
+      "BG": "بيمان بنغلاديش إيرلاينز", "5J": "سيبو باسيفيك (الفلبين)", "ZE": "إيستار جيت (كوريا الجنوبية)",
+      "LJ": "جين إير (كوريا الجنوبية)", "7C": "جيجو اير (كوريا الجنوبية)", "GK": "جيت ستار جابان (اليابان)",
+      "MM": "بيتش (اليابان)", "HO": "خطوط شنغهاي الجوية (الصين)", "MF": "خطوط شيامن الجوية (الشرق)",
+      "8Y": "ميانيغ إير (منغوليا)", "FM": "خطوط شنغهاي الجوية (الصين)",
+      "JD": "خطوط بكين كابيتال الجوية (الصين)", "PN": "خطوط ويست إير (الصين)",
+      "GX": "خطوط جوانغشي بيبو الخليج الجوية (الصين)", "DR": "خطوط فيتريكس ايرلاينز (إندونيسيا)",
+      "QG": "سيتيلينك (إندونيسيا)", "PG": "بانكوك ايرويز (تايلاند)", "VJ": "فييت جيت اير (فيتنام)",
+      "AA": "الخطوط الجوية الأمريكية", "DL": "دلتا إيرلاينز (الولايات المتحدة)",
+      "UA": "يونايتد إيرلاينز (الولايات المتحدة)", "AC": "الخطوط الجوية الكندية",
+      "AS": "خطوط ألاسكا الجوية (الولايات المتحدة)",
+      "WN": "ساوث ويست إيرلاينز (الولايات المتحدة)",
+      "B6": "جيت بلو إيرويز (الولايات المتحدة)",
+      "NK": "سبيريت إيرلاينز (الولايات المتحدة)",
+      "F9": "فرونتير إيرلاينز (الولايات المتحدة)",
+      "G4": "أليجانت إير (الولايات المتحدة)",
+      "SY": "صن كانتري إيرلاينز (الولايات المتحدة)", "TS": "إير ترانسات (كندا)",
+      "WS": "وست جيت (كندا)", "PD": "بورتر إيرلاينز (كندا)", "HA": "خطوط هاواي الجوية (الولايات المتحدة)",
+      "CM": "كوبا إيرلاينز (بنما)", "YX": "ريجسيونال إكسبريس (الولايات المتحدة)",
+      "G7": "غو جيت ايرلاينز (الولايات المتحدة)", "LA": "لاتام إيرلاينز (تشيلي - المجموعة الأم)",
+      "AR": "الخطوط الجوية الأرجنتينية", "AV": "أفيانكا (كولومبيا - المجموعة الأم)",
+      "AM": "أيرومكسيكو", "H2": "سكاي إيرلاين (تشيلي)", "JJ": "لاتام برازيل (البرازيل)",
+      "TA": "أفيانكا السلفادور", "PZ": "لاتام باراغواي", "LP": "لاتام بيرو",
+      "QF": "كانتاس (أستراليا)", "NZ": "طيران نيوزيلندا", "VA": "فيرجن أستراليا",
+      "FJ": "فيجي إيرويز", "PX": "إير نيوغيني (بابوا غينيا الجديدة)", "SB": "إير كاليدوني (كاليدونيا الجديدة)",
+
+      "SA": "الخطوط الجوية لجنوب أفريقيا",
+      "KQ": "الخطوط الكينية",
+      "HM": "طيران سيشل",
+      "MK": "طيران موريشيوس",
+      "WB": "رواند إير (رواندا)",
+      "DT": "تاغ أنغولا (أنجولا)",
+      "TM": "الخطوط الجوية الموزمبيقية",
+
+      /* Cargo / Logistics */
+      "FX": "فيديكس إكسبرس",
+      "5X": "يو بي إس (UPS Airlines)",
+      "UPS": "يو بي إس (UPS Airlines) [الكود الشائع: 5X]",
+      "PO": "بولار إير كارجو (Polar Air Cargo)",
+
+      "AD": "أزول لينهاس آيرياس (البرازيل)",
+
+      "XZ": "ساوث أفريكان إكسبرس (South African Express - توقفت)"
+    };
+
+    // --- FULL DATABASE: Airports ---
+    const airports = {
+      "DXB": "دبي الدولي (الإمارات)", "KWI": "الكويت الدولي (الكويت)", "JED": "جدة الملك عبد العزيز الدولي (السعودية)",
+      "DOH": "الدوحة حمد الدولي (قطر)", "RUH": "الرياض الملك خالد الدولي (السعودية)", "AUH": "أبو ظبي الدولي (الإمارات)",
+      "BAH": "البحرين الدولي (البحرين)", "MCT": "مسقط الدولي (عمان)", "SHJ": "الشارقة الدولي (الإمارات)",
+      "DMM": "الدمام الملك فهد الدولي (السعودية)", "MED": "المدينة المنورة الأمير محمد بن عبد العزيز الدولي (السعودية)",
+      "ELQ": "القصيم الأمير نايف بن عبد العزيز الدولي (السعودية)", "HAS": "حائل الدولي (السعودية)",
+      "TUU": "تابوك المحلي (السعودية)", "RAH": "رفحاء المحلي (السعودية)", "AQI": "القيصومة المحلي (السعودية)",
+      "HOF": "الهفوف المحلي (السعودية)", "TIF": "الطائف الإقليمي (السعودية)", "ABH": "أبها الدولي (السعودية)",
+      "GIZ": "جازان الملك عبد الله الإقليمي (السعودية)", "A": "أبها الإقليمي (السعودية)",
+      "BHH": "بيشة المحلي (السعودية)", "DWD": "الدوادمي المحلي (السعودية)", "EJH": "الوجه المحلي (السعودية)",
+      "KMC": "خميس مشيط المحلي (السعودية)", "RAE": "عرعر المحلي (السعودية)", "WAE": "وادي الدواسر المحلي (السعودية)",
+      "ULH": "العلا المحلي (السعودية)", "YNB": "ينبع الإقليمي (السعودية)", "XXN": "نجران المحلي (السعودية)",
+      "DWC": "دبي وورلد سنترال (آل مكتوم الدولي) (الإمارات)", "FJR": "الفجيرة الدولي (الإمارات)",
+      "RKT": "رأس الخيمة الدولي (الإمارات)", "KHS": "خصب (عمان)", "SOH": "صحار (عمان)", "DQM": "الدقم (عمان)",
+      "CAI": "القاهرة الدولي (مصر)", "LXR": "الأقصر الدولي (مصر)", "SSH": "شرم الشيخ الدولي (مصر)",
+      "HRG": "الغردقة الدولي (مصر)", "ATZ": "أسيوط (مصر)", "HBE": "برج العرب (الإسكندرية، مصر)",
+      "ALY": "النزهة (الإسكندرية، مصر)", "ASW": "أسوان الدولي (مصر)", "RMF": "مرسى علم الدولي (مصر)",
+      "MUH": "مرسى مطروح الدولي (مصر)", "HMB": "سوهاج الدولي (مصر)", "TCP": "طابا الدولي (مصر)",
+      "AMM": "الملكة علياء الدولي (عمان، الأردن)", "BEY": "رفيق الحريري الدولي (بيروت، لبنان)",
+      "DAM": "دمشق الدولي (سوريا)", "BGW": "بغداد الدولي (العراق)", "ERB": "أربيل الدولي (العراق)",
+      "IST": "إسطنبول (مطار إسطنبول الجديد، تركيا)", "SAW": "إسطنبول صبيحة كوكجن (تركيا)",
+      "AYT": "أنطاليا (تركيا)", "ESB": "أنقرة إسنبوغا الدولي (تركيا)", "ADB": "إزمير عدنان مندريس (تركيا)",
+      "IKA": "الإمام الخميني الدولي (طهران، إيران)", "THR": "مطار مهرآباد الدولي (طهران، إيران)",
+      "MHD": "مشهد الدولي (إيران)", "SYZ": "شيراز الدولي (إيران)", "TUN": "تونس قرطاج الدولي (تونس)",
+      "ALG": "الجزائر هواري بومدين الدولي (الجزائر)", "CMN": "الدار البيضاء محمد الخامس الدولي (المغرب)",
+      "AGP": "أكادير المسيرة الدولي (المغرب)", "FEZ": "فاس سايس الدولي (المغرب)", "RAK": "مراكش المنارة الدولي (المغرب)",
+      "KRT": "الخرطوم الدولي (السودان)", "HGA": "هرجيسا إيجال الدولي (صوماليلاند - الصومال)",
+      "MGQ": "مقديشو آدم عدي الدولي (الصومال)", "LHR": "لندن هيثرو (المملكة المتحدة)",
+      "LGW": "لندن جاتويك (المملكة المتحدة)", "STN": "لندن ستانستيد (المملكة المتحدة)",
+      "MAN": "مانشستر (المملكة المتحدة)", "EDI": "إدنبرة (المملكة المتحدة)", "DUB": "دبلن (أيرلندا)",
+      "CDG": "باريس شارل ديغول (فرنسا)", "ORY": "باريس أورلي (فرنسا)", "FRA": "فرانكفورت (ألمانيا)",
+      "MUC": "ميونخ (ألمانيا)", "BER": "برلين براندنبورغ (ألمانيا)", "DUS": "دوسلدورف (ألمانيا)",
+      "HAM": "هامبورغ (ألمانيا)", "STR": "شتوتغارت (ألمانيا)", "ZRH": "زيوريخ (سويسرا)",
+      "GVA": "جنيف (سويسرا)", "VIE": "فيينا (النمسا)", "AMS": "أمستردام سخيبول (هولندا)",
+      "BRU": "بروكسل (بلجيكا)", "CPH": "كوبنهاغن (الدنمارك)", "OSL": "أوسلو غارديرموين (النرويج)",
+      "ARN": "ستوكهولم أرلاندا (السويد)", "HEL": "هلسنكي فانتا (فنلندا)", "FCO": "روما فيوميتشينو (إيطاليا)",
+      "MXP": "ميلانو مالبينسا (إيطاليا)", "BCN": "برشلونة إل برات (إسبانيا)",
+      "MAD": "مدريد باراخاس أدولفو سواريز (إسبانيا)", "LIS": "لشبونة هومبرتو دلغادو (البرتغال)",
+      "PRG": "براغ فاكلاف هافيل (التشيك)", "WAW": "وارسو شوبان (بولندا)",
+      "BUD": "بودابست فيرينك ليزت الدولي (المجر)", "ATH": "أثينا الدولي (اليونان)",
+      "SKG": "سالونيك مقدونيا (اليونان)", "SOF": "صوفيا (بلغاريا)",
+      "OTP": "بوخارست هنري كواندا الدولي (رومانيا)", "BEG": "بلغراد نيكولا تيسلا (صربيا)",
+      "ZAG": "زغرب (كرواتيا)", "LJU": "ليوبليانا يوجي بوتشنيك (سلوفينيا)", "TIA": "تيرانا الأم تيريزا (ألبانيا)",
+      "SKP": "سكوبيه الدولي (مقدونيا الشمالية)", "SJJ": "سراييفو الدولي (البوسنة والهرسك)",
+      "FLR": "فلورنسا (إيطاليا)", "VCE": "فينيسيا ماركو بولو (إيطاليا)", "NAP": "نابولي (إيطاليا)",
+      "CTA": "كاتانيا (إيطاليا)", "PMO": "باليرمو (إيطاليا)", "BGY": "بيرغامو أوريو آل سيريو (إيطاليا)",
+      "CRL": "شارلروة بروكسل جنوب (بلجيكا)", "PMI": "بالما دي مايوركا (إسبانيا)",
+      "ALC": "أليكانتي (إسبانيا)", "VLC": "فالنسيا (إسبانيا)", "FAO": "فارو (البرتغال)",
+      "OPO": "بورتو (البرتغال)", "KRK": "كراكوف (بولندا)", "GDN": "غدانسك ليخ فاليسا (بولندا)",
+      "KTW": "كاتوفيتشي (بولندا)", "TXL": "برلين تيجيل (مغلق حالياً)", "SXF": "برلين شونفيلد (مغلق حالياً)",
+      "VNO": "فيلنيوس (ليتوانيا)", "RIX": "ريغا (لاتفيا)", "TLL": "تالين (إستونيا)",
+      "KGD": "كالينينغراد خربوفو (روسيا)", "PUY": "بولا (كرواتيا)", "SVO": "موسكو شيريميتيفو (روسيا)",
+      "DME": "موسكو دوموديدوفو (روسيا)", "VKO": "موسكو فنوكوفو (روسيا)", "LED": "سانت بطرسبرغ بولكوفو (روسيا)",
+      "KZN": "قازان الدولي (روسيا)", "AER": "سوتشي الدولي (روسيا)", "SVX": "يكاترينبورغ كولتسوفو (روسيا)",
+      "OVB": "نوفوسيبيرسك تولماتشيفو (روسيا)", "ROV": "روستوف نا دونو بلاطوف (روسيا)",
+      "ABA": "أباكان (روسيا)", "AAQ": "أنابا (روسيا)",
+      "KUL": "كوالالمبور الدولي (ماليزيا)", "BKK": "بانكوك سوفارنابومي (تايلاند)",
+      "DMK": "بانكوك دون موينغ (تايلاند)", "ICN": "سيؤول إنشيون (كوريا الجنوبية)",
+      "NRT": "طوكيو ناريتا (اليابان)", "HND": "طوكيو هانيدا (اليابان)", "HKG": "هونغ كونغ الدولي (هونغ كونغ)",
+      "PEK": "بكين كابيتال الدولي (الصين)", "PVG": "شنغهاي بودونغ الدولي (الصين)",
+      "CAN": "قوانغتشو باييون الدولي (الصين)", "SHA": "شنغهاي هونغكياو الدولي (الصين)",
+      "CTU": "تشنغدو شوانغليو الدولي (الصين)", "XIY": "شيان شيانيانغ الدولي (الصين)",
+      "SZX": "شنتشن باوآن الدولي (الصين)", "CRK": "كلارك الدولي (الفلبين)",
+      "CEB": "ماكتان سيبو الدولي (الفلبين)", "MNL": "مانيلا نينوي أكينو الدولي (الفلبين)",
+      "DAD": "دا نانغ الدولي (فيتنام)", "HAN": "هانوي نوي باي الدولي (فيتنام)",
+      "SGN": "مدينة هو تشي منه تان سون نهات الدولي (فيتنام)", "REP": "سيم ريب الدولي (كمبوديا)",
+      "PQC": "فو كوك الدولي (فيتنام)", "CNX": "تشيانغ ماي الدولي (تايلاند)",
+      "HKT": "بوكيت الدولي (تايلاند)", "KTM": "كاتماندو تريبوفان الدولي (نيبال)",
+      "DAC": "دكا شاه جلال الدولي (بنغلاديش)", "ISB": "إسلام أباد الدولي (باكستان)",
+      "LHE": "لاهور علامة إقبال الدولي (باكستان)", "KHI": "كراتشي جناح الدولي (باكستان)",
+      "MLE": "ماليه فيلانا الدولي (المالديف)", "GAN": "غان الدولي (المالديف)",
+      "GYD": "باكو حيدر علييف الدولي (أذربيجان)", "NQZ": "أستانا الدولي (كازاخستان)",
+      "TAS": "طشقند الدولي (أوزبكستان)", "CGK": "جاكرتا سوكارنو هاتا الدولي (إندونيسيا)",
+      "DPS": "دينباسار نغوراه راي (بالي، إندونيسيا)", "SUB": "سورابايا جواندا (إندونيسيا)",
+      "PEN": "بينانغ الدولي (ماليزيا)", "BKI": "كوتا كينابالو (ماليزيا)",
+      "CMB": "كولومبو باندرانايكي (سريلانكا)", "GOI": "غوا دابوليم (الهند)",
+      "BLR": "بنغالور كيمبيغودا (الهند)", "MAA": "تشيناي (الهند)", "HYD": "حيدر أباد راجيف غاندي (الهند)",
+      "CCU": "كولكاتا نيتاجي سوبهاس تشاندرا بوس (الهند)", "DEL": "نيودلهي إنديرا غاندي (الهند)",
+      "BOM": "مومباي تشاتراباتي شيفاجي (الهند)", "IXM": "مادوراي (الهند)",
+      "CJB": "كويمباتور (الهند)", "UPG": "ماكاسار سلطان حسن الدين (إندونيسيا)",
+      "KNO": "ميدان كوالانامو (إندونيسيا)", "JOG": "يوجياكارتا الدولي (إندونيسيا)",
+      "SRG": "سمارانغ أحمد ياني الدولي (إندونيسيا)", "KIX": "أوساكا كانساي الدولي (اليابان)",
+      "FUK": "فوكوكا (اليابان)", "CTS": "سابورو تشيتوس الجديدة (اليابان)", "HKD": "هاكوداته (اليابان)",
+      "JFK": "نيويورك جون إف كينيدي (الولايات المتحدة)", "LAX": "لوس أنجلوس (الولايات المتحدة)",
+      "ORD": "شيكاغو أوهير (الولايات المتحدة)", "YYZ": "تورونتو بيرسون (كندا)",
+      "YVR": "فانكوفر (كندا)", "MEX": "مكسيكو سيتي (المكسيك)", "MIA": "ميامي الدولي (الولايات المتحدة)",
+      "ATL": "أتلانتا هارتسفيلد جاكسون (الولايات المتحدة)", "DEN": "دنفر الدولي (الولايات المتحدة)",
+      "DFW": "دالاس فورت وورث الدولي (الولايات المتحدة)", "SEA": "سياتل تاكوما الدولي (الولايات المتحدة)",
+      "BOS": "بوسطن لوغان الدولي (الولايات المتحدة)", "MCO": "أورلاندو الدولي (الولايات المتحدة)",
+      "LAS": "لاس فيغاس هاري ريد الدولي (الولايات المتحدة)", "SFO": "سان فرانسيسكو الدولي (الولايات المتحدة)",
+      "CLT": "شارلوت دوغلاس الدولي (الولايات المتحدة)", "PHX": "فينيكس سكاي هاربر الدولي (الولايات المتحدة)",
+      "PDX": "بورتلاند الدولي (الولايات المتحدة)", "SLC": "سولت ليك سيتي الدولي (الولايات المتحدة)",
+      "MSP": "منيابوليس سانت بول الدولي (الولايات المتحدة)", "DTW": "ديترويت متروبوليتان (الولايات المتحدة)",
+      "IAH": "هيوستن جورج بوش بينكونتيننتال (الولايات المتحدة)", "PTY": "بنما سيتي توكومن الدولي (بنما)",
+      "CUN": "كانكون الدولي (المكسيك)", "GRU": "ساو باولو غوارولوس (البرازيل)",
+      "EZE": "بوينس آيرس إيزيزا (الأرجنتين)", "SCL": "سانتياغو أرتورو ميرينو بينيتيز (تشيلي)",
+      "BOG": "بوغوتا إل دورادو الدولي (كولومبيا)", "LIM": "ليما خورخي شافيز الدولي (بيرو)",
+      "PUJ": "بونتا كانا (جمهورية الدومينيكان)", "UIO": "كيتو ماريسكال سوكر الدولي (الإكوادور)",
+      "GIG": "ريو دي جانيرو غاليغو الدولي (البرازيل)", "SYD": "سيدني كينغسفورد سميث (أستراليا)",
+      "MEL": "ملبورن (أستراليا)", "AKL": "أوكلاند (نيوزيلندا)", "BNE": "بريسبان (أستراليا)",
+      "PER": "بيرث (أستراليا)", "ADL": "أديلايد (أستراليا)", "CHC": "كرايستشيرش (نيوزيلندا)",
+      "WLG": "ويلينغتون (نيوزيلندا)", "PPT": "بابيتي فآ الدولي (بولينيزيا الفرنسية)",
+      "NAN": "نادي الدولي (فيجي)", "APW": "أبيا فاليولو الدولي (ساموا)",
+      "POM": "بورت مورسبي جاكسون الدولي (بابوا غينيا الجديدة)",
+      "ADD": "أديس أبابا بول الدولي (إثيوبيا)"
+    };
+
+    // ---------------- Helpers ----------------
+    function getDayName(d){ return ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'][d.getDay()]; }
+    function getMonthName(m){ return {'JAN':'يناير','FEB':'فبراير','MAR':'مارس','APR':'أبريل','MAY':'مايو','JUN':'يونيو','JUL':'يوليو','AUG':'أغسطس','SEP':'سبتمبر','OCT':'أكتوبر','NOV':'نوفمبر','DEC':'ديسمبر'}[m] || m; }
+    function getMonthNumber(c){ return {'JAN':0,'FEB':1,'MAR':2,'APR':3,'MAY':4,'JUN':5,'JUL':6,'AUG':7,'SEP':8,'OCT':9,'NOV':10,'DEC':11}[c]; }
+    function getMonthCode(n){ return ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'][n]; }
+
+    // اسم مختصر للمطار (من غير الدولة وكلمة الدولي)
+    function shortName(n){
+      return String(n).replace(/\s*\(.*?\)\s*/g,' ').replace('الدولي','').replace(/\s+/g,' ').trim();
+    }
+
+    // الدولة من آخر قوس في اسم المطار (للتفرقة بين داخلي ودولي)
+    function countryOf(name){
+      const m = String(name).match(/\(([^()]*)\)\s*$/);
+      if(!m) return null;
+      const parts = m[1].split('،');
+      return parts[parts.length-1].trim();
+    }
+
+    // شركات الطيران الاقتصادي: غالباً بدون شنطة مشحونة (تقديري، راجع الفير)
+    const LCC = new Set(['G9','J9','XY','FZ','FR','W6','U2','VY','TR','AK','D7','PC','NK','F9']);
+
+    function baggageText(airlineCode, choice){
+      let checked;
+      if(choice === 'auto') checked = LCC.has(airlineCode) ? '' : '23 كيلو';
+      else if(choice === 'none') checked = '';
+      else if(choice === '2x23') checked = '2 × 23 كيلو';
+      else checked = choice + ' كيلو';
+      return checked
+        ? `🧳 7 كيلو شنطة يد + ${checked}`
+        : `🧳 7 كيلو شنطة يد فقط`;
+    }
+
+    // ✅ Supports "1100" and "1100+1"
+    function parseTimeToken(token){
+      const m = String(token).match(/^(\d{4})(?:\+(\d+))?$/);
+      if(!m) return null;
+      const t = m[1];
+      const hh = parseInt(t.slice(0,2),10);
+      const mm = parseInt(t.slice(2),10);
+      if(hh<0 || hh>23 || mm<0 || mm>59) return null;
+      return { time: t, dayAdd: m[2] ? parseInt(m[2],10) : 0 };
+    }
+
+    function formatTime12Hour(time24){
+      if(!time24 || !/^\d{4}$/.test(time24)) return '';
+      let h = parseInt(time24.slice(0,2),10);
+      const m = time24.slice(2);
+      const ampm = h>=12 ? 'م' : 'ص';
+      h = h%12 || 12;
+      return `${h}:${m} ${ampm}`;
+    }
+
+    function parseSegment(str){
+      const res = { raw: str };
+      const parts = str.trim().split(/\s+/);
+      if(parts.length < 5){ res.error=true; res.errorMsg="صيغة السطر غير كافية"; return res; }
+
+      let airlineCode="", flightNo="", datePart="", route="", routeIdx=-1;
+      const times = [];
+
+      // airline & flight
+      if(/^[A-Z]{2}\d{3,4}$/i.test(parts[1])){
+        airlineCode = parts[1].substring(0,2).toUpperCase();
+        flightNo = parts[1].substring(2);
+      } else {
+        airlineCode = (parts[1]||"").toUpperCase();
+        flightNo = (parts[2]||"");
+      }
+
+      parts.forEach((p, idx) => {
+        if(/\d{2}[A-Z]{3}/i.test(p) && !datePart) datePart = p.toUpperCase();
+        if(!route && /^(?:[0-9]+\*)?([A-Z]{6})$/i.test(p)){
+          route = p.match(/([A-Z]{6})$/i)[1].toUpperCase();
+          routeIdx = idx;
+        }
+      });
+
+      // الأوقات بتتقرا من بعد المسار بس (عشان رقم رحلة من 4 أرقام ميتفهمش كوقت)
+      if(routeIdx >= 0){
+        for(let i = routeIdx + 1; i < parts.length; i++){
+          const tp = parseTimeToken(parts[i]);
+          if(tp) times.push(tp);
+        }
+      }
+
+      if(!datePart || !route || times.length < 2){
+        res.error=true; res.errorMsg="لم يتم العثور على (التاريخ/المسار/الوقت) بشكل صحيح";
+        return res;
+      }
+
+      res.airlineCode = airlineCode;
+      res.flightNo = flightNo;
+      res.airline = airlines[airlineCode] || airlineCode;
+
+      res.origin = route.slice(0,3);
+      res.dest   = route.slice(3,6);
+      res.originName = airports[res.origin] || res.origin;
+      res.destName   = airports[res.dest] || res.dest;
+
+      // أكواد غير معروفة
+      res.unknown = [];
+      if(!airlines[airlineCode]) res.unknown.push('شركة طيران: ' + airlineCode);
+      if(!airports[res.origin]) res.unknown.push('مطار: ' + res.origin);
+      if(!airports[res.dest])   res.unknown.push('مطار: ' + res.dest);
+
+      const depT = times[0];
+      const arrT = times[1];
+
+      res.depTime = depT.time;
+      res.arrTime = arrT.time;
+      res.arrDayAdd = arrT.dayAdd || 0;
+
+      const day = parseInt(datePart.slice(0,2),10);
+      const mon = datePart.slice(2,5);
+      const monthNum = getMonthNumber(mon);
+      if(monthNum === undefined){
+        res.error=true; res.errorMsg="كود الشهر غير معروف: "+mon;
+        return res;
+      }
+
+      let year = new Date().getFullYear();
+      const today = new Date(); today.setHours(0,0,0,0);
+      const depDateOnly = new Date(year, monthNum, day); depDateOnly.setHours(0,0,0,0);
+      if(depDateOnly < today) year++;
+
+      res.depDateObj = new Date(
+        year, monthNum, day,
+        parseInt(res.depTime.slice(0,2),10),
+        parseInt(res.depTime.slice(2),10)
+      );
+
+      res.arrDateObj = new Date(
+        year, monthNum, day,
+        parseInt(res.arrTime.slice(0,2),10),
+        parseInt(res.arrTime.slice(2),10)
+      );
+
+      if(res.arrDayAdd > 0){
+        res.arrDateObj.setDate(res.arrDateObj.getDate() + res.arrDayAdd);
+      } else if(res.arrDateObj < res.depDateObj){
+        res.arrDateObj.setDate(res.arrDateObj.getDate() + 1);
+      }
+
+      res.fmtDep  = `${getDayName(res.depDateObj)} ${day} ${getMonthName(mon)} ${year}`;
+      res.fmtArr  = `${getDayName(res.arrDateObj)} ${res.arrDateObj.getDate()} ${getMonthName(getMonthCode(res.arrDateObj.getMonth()))} ${res.arrDateObj.getFullYear()}`;
+      res.fmtDepT = formatTime12Hour(res.depTime);
+      res.fmtArrT = formatTime12Hour(res.arrTime);
+
+      return res;
+    }
+
+    // تقسيم الرحلات: أي فاصل 24 ساعة أو أكتر = رحلة جديدة
+    function groupTrips(segs){
+      const groups = [[segs[0]]];
+      for(let i=1;i<segs.length;i++){
+        const gap = segs[i].depDateObj - segs[i-1].arrDateObj;
+        if(gap >= 86400000) groups.push([segs[i]]);
+        else groups[groups.length-1].push(segs[i]);
+      }
+      return groups;
+    }
+
+    function tripLabels(groups, segs){
+      if(groups.length === 1) return [''];
+      const roundTrip = groups.length === 2 && segs[segs.length-1].dest === segs[0].origin;
+      if(roundTrip) return ['رحلة الذهاب','رحلة العودة'];
+      return groups.map((_, i) => `الرحلة ${i+1}`);
+    }
+
+    // فرق الأيام بين المغادرة والوصول
+    function dayDiff(a, b){
+      const d1 = new Date(a.getFullYear(), a.getMonth(), a.getDate());
+      const d2 = new Date(b.getFullYear(), b.getMonth(), b.getDate());
+      return Math.round((d2 - d1) / 86400000);
+    }
+
+    // العرض المختصر: كارت واحد لكل رحلة
+    function compactTrip(g, bagChoice){
+      const sameAir = g.every(s => s.airlineCode === g[0].airlineCode);
+      let rows = '';
+      if(sameAir) rows += `<p>✈️ <strong>${g[0].airline}</strong></p>`;
+
+      let lastDate = '';
+      g.forEach((s, i) => {
+        if(i > 0){
+          const prev = g[i-1];
+          if(prev.dest === s.origin){
+            const diffMs = s.depDateObj - prev.arrDateObj;
+            if(diffMs > 0 && diffMs < 86400000){
+              const h = Math.floor(diffMs/3600000);
+              const m = Math.round((diffMs%3600000)/60000);
+              rows += `<p>⏳ انتظار ${h} س ${m} د في ${shortName(s.originName)}</p>`;
+            }
+          }
+        }
+
+        const dateShort = `${getDayName(s.depDateObj)} ${s.depDateObj.getDate()} ${getMonthName(getMonthCode(s.depDateObj.getMonth()))}`;
+        const showDate = dateShort !== lastDate;
+        lastDate = dateShort;
+
+        const dd = dayDiff(s.depDateObj, s.arrDateObj);
+        const next = dd > 0 ? ` (+${dd})` : '';
+        const head = sameAir ? '' : `<strong>${s.airline}</strong> | `;
+
+        rows += `<p>${sameAir ? '🛫' : '✈️'} ${head}${shortName(s.originName)} ← ${shortName(s.destName)}${showDate ? ' | ' + dateShort : ''} | ${s.fmtDepT} ← ${s.fmtArrT}${next}</p>`;
+      });
+
+      // الشنطة: مرة واحدة لو واحدة لكل القطع
+      const texts = g.map(s => baggageText(s.airlineCode, bagChoice));
+      if(texts.every(t => t === texts[0])){
+        rows += `<p>${texts[0]}</p>`;
+      } else {
+        g.forEach((s, i) => {
+          rows += `<p>🧳 ${s.origin}←${s.dest}: ${texts[i].replace('🧳 ','')}</p>`;
+        });
+      }
+
+      return `<div class="flight-segment">${rows}</div>`;
+    }
+
+    // ---------------- Convert ----------------
+    document.getElementById('convertButton').addEventListener('click', () => {
+      const lines = document.getElementById('amadeusSegments').value
+        .split('\n').map(l => l.trim()).filter(Boolean);
+
+      const output = document.getElementById('resultsOutput');
+      output.innerHTML = '';
+
+      if(!lines.length){
+        output.innerHTML = '<p style="text-align:center">Please enter segments.</p>';
+        return;
+      }
+
+      const parsed = lines.map(parseSegment);
+      const segments = parsed.filter(x => !x.error);
+      const errors   = parsed.filter(x => x.error);
+
+      let html = '';
+
+      // العناصر اللي عليها nocopy مبتتنسخش
+      if(errors.length){
+        html += `<div class="line-error nocopy"><strong>⚠️ بعض السطور لم يتم قراءتها:</strong><br>`;
+        errors.forEach(e=>{
+          html += `• ${e.errorMsg || "خطأ غير معروف"}<br><span style="opacity:.9">(${e.raw})</span><br><br>`;
+        });
+        html += `</div>`;
+      }
+
+      if(!segments.length){
+        html += '<p style="text-align:center;color:#b00020;font-weight:bold;">لا يوجد Segments صحيحة للتحويل.</p>';
+        output.innerHTML = html;
+        return;
+      }
+
+      // تحذير الأكواد غير المعروفة
+      const unknown = [...new Set(segments.flatMap(s => s.unknown || []))];
+      if(unknown.length){
+        html += `<div class="line-error nocopy"><strong>⚠️ كود غير معروف (ضيفه في القاعدة):</strong><br>${unknown.join('<br>')}</div>`;
+      }
+
+      const bagChoice = document.getElementById('baggageSelect').value;
+      const viewMode = document.getElementById('viewMode').value;
+      const pax   = document.getElementById('paxInput').value.trim();
+      const price = document.getElementById('priceInput').value.trim();
+
+      const groups = groupTrips(segments);
+      const labels = tripLabels(groups, segments);
+
+      groups.forEach((g, gi) => {
+        if(labels[gi]) html += `<div class="trip-label"><strong>${labels[gi]}</strong></div>`;
+
+        if(viewMode === 'compact'){
+          html += compactTrip(g, bagChoice);
+          return;
+        }
+
+        g.forEach((s, i) => {
+          // انتظار قصير (أقل من 24 ساعة، نفس المطار)
+          if(i>0){
+            const prev = g[i-1];
+            if(prev.dest === s.origin){
+              const diffMs = s.depDateObj - prev.arrDateObj;
+              if(diffMs > 0 && diffMs < 86400000){
+                const h = Math.floor(diffMs/3600000);
+                const m = Math.round((diffMs%3600000)/60000);
+                html += `<div class="transit-box ${h < 2 ? 'warning' : ''}">⏳ انتظار ${h} س ${m} د في ${shortName(s.originName)}</div>`;
+              }
+            }
+          }
+
+          const sameDay = s.depDateObj.toDateString() === s.arrDateObj.toDateString();
+          const arrExtra = sameDay ? '' : ` (${s.fmtArr})`;
+
+          html += `
+            <div class="flight-segment">
+              <p>✈️ <strong>${s.airline}</strong></p>
+              <p>🛫 ${shortName(s.originName)} (${s.origin}) ← ${shortName(s.destName)} (${s.dest})</p>
+              <p>📅 ${s.fmtDep}</p>
+              <p>🕒 ${s.fmtDepT} ← ${s.fmtArrT}${arrExtra}</p>
+              <p>${baggageText(s.airlineCode, bagChoice)}</p>
+            </div>
+          `;
+        });
+      });
+
+      // الركاب والسعر (لو اتكتبوا)
+      if(pax || price){
+        html += `<div class="extra-box">`;
+        if(pax)   html += `<p>👥 <strong>عدد الركاب:</strong> ${pax}</p>`;
+        if(price) html += `<p>💰 <strong>السعر:</strong> ${price}</p>`;
+        html += `</div>`;
+      }
+
+      // الحضور: ساعتين لو كل الرحلات داخلية، 3 ساعات لو في أي رحلة دولية
+      const allDomestic = segments.every(s => {
+        const a = countryOf(s.originName), b = countryOf(s.destName);
+        return a && b && a === b;
+      });
+      const arriveBefore = allDomestic ? 'ساعتين' : '3 ساعات';
+
+      html += `
+        <div class="disclaimer-box">
+          ⚠️ السعر غير ثابت لحين الحجز • الحضور قبل الرحلة بـ ${arriveBefore} • غير قابل للتعديل أو الاسترداد
+        </div>
+      `;
+
+      output.innerHTML = html;
+    });
+
+    // ---------------- Clear / Copy ----------------
+    document.getElementById('clearInputButton').onclick = () => {
+      document.getElementById('amadeusSegments').value = '';
+    };
+    document.getElementById('clearResultsButton').onclick = () => {
+      document.getElementById('resultsOutput').innerHTML = '<p style="text-align:center;color:#888">Results here...</p>';
+    };
+
+    function textWithStars(el, star){
+      const c = el.cloneNode(true);
+      if(star) c.querySelectorAll('strong,b').forEach(s => { s.textContent = '*' + s.textContent.trim() + '*'; });
+      return c.textContent.replace(/[ \t]+\n/g,'\n').trim();
+    }
+
+    function buildText(star){
+      const out = document.getElementById('resultsOutput');
+      const blocks = [];
+      Array.from(out.children).forEach(el => {
+        if(el.classList.contains('nocopy')) return;
+        const ps = el.querySelectorAll(':scope > p');
+        if(ps.length){
+          blocks.push(Array.from(ps).map(p => textWithStars(p, star)).filter(Boolean).join('\n'));
+        } else {
+          const t = textWithStars(el, star);
+          if(t) blocks.push(t);
+        }
+      });
+      return blocks.join('\n\n');
+    }
+
+    function copyOut(star, label){
+      const out = document.getElementById('resultsOutput');
+      if(!out.querySelector('.flight-segment')) return;
+      navigator.clipboard.writeText(buildText(star)).then(() => {
+        const fb = document.getElementById('copyFeedback');
+        fb.textContent = label;
+        fb.classList.add('show');
+        setTimeout(() => fb.classList.remove('show'), 2000);
+      });
+    }
+
+    document.getElementById('copyResultsButton').onclick = () => copyOut(false, 'Copied!');
+    document.getElementById('copyWaButton').onclick = () => copyOut(true, 'Copied for WhatsApp!');
+  </script>
+
+</body>
+</html>
